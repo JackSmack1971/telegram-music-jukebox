@@ -1,0 +1,175 @@
+
+<style>
+  #mermaid-wrap { width:100%; overflow-x:auto; padding:12px 0; }
+  #mermaid-wrap svg { min-width:900px; }
+  .legend { display:flex; flex-wrap:wrap; gap:8px; padding:10px 0 4px; font-size:12px; color:var(--color-text-secondary); }
+  .leg { display:flex; align-items:center; gap:5px; }
+  .leg-dot { width:10px; height:10px; border-radius:2px; flex-shrink:0; }
+</style>
+<div class="legend">
+  <div class="leg"><div class="leg-dot" style="background:#185FA5"></div>Enforced boundary [!]</div>
+  <div class="leg"><div class="leg-dot" style="background:#1D9E75"></div>Required file [R]</div>
+  <div class="leg"><div class="leg-dot" style="background:#534AB7"></div>Lua script (*_atomic.lua)</div>
+  <div class="leg"><div class="leg-dot" style="background:#D85A30"></div>Chaos test</div>
+  <div class="leg"><div class="leg-dot" style="background:#888780"></div>Directory / config</div>
+</div>
+<div id="mermaid-wrap"><div id="mmd"></div></div>
+<script type="module">
+import mermaid from 'https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs';
+const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+await document.fonts.ready;
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'base',
+  fontFamily: '"Anthropic Sans", sans-serif',
+  themeVariables: {
+    darkMode: dark,
+    fontSize: '12px',
+    fontFamily: '"Anthropic Sans", sans-serif',
+    primaryColor: dark ? '#1a2a3a' : '#E6F1FB',
+    primaryTextColor: dark ? '#B5D4F4' : '#0C447C',
+    primaryBorderColor: dark ? '#378ADD' : '#185FA5',
+    lineColor: dark ? '#9c9a92' : '#73726c',
+    secondaryColor: dark ? '#1a2a2a' : '#E1F5EE',
+    tertiaryColor: dark ? '#2a1a2a' : '#EEEDFE',
+    edgeLabelBackground: dark ? '#1a1a2e' : '#f8f9fa',
+    clusterBkg: dark ? '#0d1b2a' : '#f0f4f8',
+    clusterBorder: dark ? '#2a4a6a' : '#c0d4e8',
+  },
+  flowchart: { curve: 'basis', padding: 14, nodeSpacing: 32, rankSpacing: 48 },
+});
+const graph = `flowchart LR
+  classDef root     fill:#C04828,stroke:#993C1D,color:#F5C4B3,font-weight:500
+  classDef dir      fill:#E6F1FB,stroke:#185FA5,color:#0C447C,font-weight:500
+  classDef dirDark  fill:#185FA5,stroke:#378ADD,color:#B5D4F4,font-weight:500
+  classDef enforced fill:#185FA5,stroke:#042C53,color:#E6F1FB,font-weight:500
+  classDef req      fill:#E1F5EE,stroke:#0F6E56,color:#085041,font-weight:500
+  classDef lua      fill:#EEEDFE,stroke:#534AB7,color:#26215C,font-weight:500
+  classDef chaos    fill:#FAECE7,stroke:#993C1D,color:#4A1B0C,font-weight:500
+  classDef test     fill:#F1EFE8,stroke:#5F5E5A,color:#2C2C2A
+  classDef cfg      fill:#F1EFE8,stroke:#888780,color:#444441
+
+  ROOT["telegram-jukebox-bot/"]:::root
+
+  ROOT --> SRC["src/ [!]"]:::enforced
+  ROOT --> TESTS["tests/"]:::dir
+  ROOT --> DOCS["docs/"]:::dir
+  ROOT --> SCRIPTS["scripts/"]:::dir
+  ROOT --> DEPLOY["deploy/"]:::dir
+  ROOT --> ROOTF["pyproject.toml · .env.example · README.md"]:::cfg
+
+  subgraph SG_SRC["  src/  "]
+    SRC --> INTERFACES["interfaces/ [!]"]:::enforced
+    SRC --> MODELS["models/ [!]"]:::enforced
+    SRC --> GATEWAY["gateway/"]:::dir
+    SRC --> BROKER["broker/"]:::dir
+    SRC --> QUEUE["queue/"]:::dir
+    SRC --> STREAM["stream/"]:::dir
+    SRC --> DOWNLOAD["download/"]:::dir
+    SRC --> CACHE["cache/"]:::dir
+    SRC --> PUBSUB["pubsub/"]:::dir
+    SRC --> REDIS["redis/"]:::dir
+    SRC --> LOGGING["logging/"]:::dir
+
+    INTERFACES --> IF1["queue_manager.py [R]"]:::req
+    INTERFACES --> IF2["stream_engine.py [R]"]:::req
+    INTERFACES --> IF3["telegram_handler.py [R]"]:::req
+    INTERFACES --> IF4["cache_manager.py [R]"]:::req
+    INTERFACES --> IF5["download_worker.py [R]"]:::req
+
+    MODELS --> M1["enums.py [R]"]:::req
+    MODELS --> M2["track.py [R]"]:::req
+    MODELS --> M3["playback_state.py [R]"]:::req
+    MODELS --> M4["group_settings.py [R]"]:::req
+    MODELS --> M5["download_result.py [R]"]:::req
+    MODELS --> M6["errors.py [R]"]:::req
+
+    GATEWAY --> GW1["dispatcher.py · router.py"]:::dir
+    GATEWAY --> MW["middleware/"]:::dir
+    GATEWAY --> KB["keyboards/"]:::dir
+    MW --> MW1["rate_limiter.py · logging_mw.py"]:::cfg
+    KB --> KB1["queue_keyboard.py"]:::cfg
+
+    BROKER --> BR1["command_broker.py · permissions.py"]:::dir
+    BROKER --> HANDLERS["handlers/"]:::dir
+    HANDLERS --> BH["play · skip · stop · queue\\nnowplaying · volume · voice_chat · error"]:::cfg
+
+    QUEUE --> QM["redis_queue_manager.py"]:::dir
+    QUEUE --> QLUA["lua/ [!]"]:::lua
+    QLUA --> QL1["skip_atomic.lua"]:::lua
+    QLUA --> QL2["promote_atomic.lua"]:::lua
+    QLUA --> QL3["ack_processed.lua"]:::lua
+
+    STREAM --> SE1["ffmpeg_stream_engine.py"]:::dir
+    STREAM --> SE2["ffmpeg_process.py · watchdog.py · heartbeat.py"]:::dir
+    STREAM --> SLUA["lua/ [!]"]:::lua
+    SLUA --> SL1["playback_state_atomic.lua"]:::lua
+    SLUA --> SL2["crash_recovery_atomic.lua"]:::lua
+    SLUA --> SL3["volume_update_atomic.lua"]:::lua
+
+    DOWNLOAD --> DW1["download_worker.py · ytdlp_client.py"]:::dir
+    DOWNLOAD --> DLUA["lua/ [!]"]:::lua
+    DLUA --> DL1["release_lock_atomic.lua"]:::lua
+
+    CACHE --> CM1["cache_manager.py · eviction_policy.py"]:::dir
+    CACHE --> CLUA["lua/ [!]"]:::lua
+    CLUA --> CL1["cache_touch_atomic.lua"]:::lua
+
+    PUBSUB --> PS["event_bus.py · event_types.py · listener.py"]:::dir
+
+    REDIS --> RC["client.py [R]"]:::req
+    REDIS --> RK["keys.py [R]"]:::req
+    REDIS --> RP["pool.py"]:::dir
+  end
+
+  subgraph SG_TESTS["  tests/  "]
+    TESTS --> UNIT["unit/"]:::test
+    TESTS --> INTEG["integration/"]:::test
+    TESTS --> E2E["e2e/"]:::test
+    TESTS --> CHAOS["chaos/ [!]"]:::chaos
+    TESTS --> CONF["conftest.py [R]"]:::req
+
+    UNIT --> U1["test_models · test_permissions\\ntest_eviction · test_keys"]:::test
+    INTEG --> I1["test_redis_queue · test_redlock\\ntest_pubsub · test_lua_scripts"]:::test
+    E2E --> E1["test_play_flow · test_skip_flow\\ntest_queue_pagination · test_vc_lifecycle"]:::test
+
+    CHAOS --> CH1["test_ffmpeg_crash.py"]:::chaos
+    CHAOS --> CH2["test_redis_partition.py"]:::chaos
+    CHAOS --> CH3["test_disk_full.py"]:::chaos
+    CHAOS --> CH4["test_concurrent_skip.py"]:::chaos
+    CHAOS --> CH5["test_duplicate_download.py"]:::chaos
+    CHAOS --> CH6["test_zombie_subprocesses.py"]:::chaos
+    CHAOS --> CH7["test_ffmpeg_semaphore.py"]:::chaos
+  end
+
+  subgraph SG_DOCS["  docs/  "]
+    DOCS --> DHLA["high-level-architecture.md [R]"]:::req
+    DOCS --> DRSCH["redis-schema.md [R]"]:::req
+    DOCS --> DETAX["error-taxonomy.md [R]"]:::req
+    DOCS --> DLUA2["lua-scripts.md · ffmpeg-pipeline.md"]:::cfg
+    DOCS --> DDEP["deployment.md · ops-runbook.md"]:::cfg
+    DOCS --> ADR["adr/"]:::dir
+    ADR --> ADR1["001-redis-as-sot.md"]:::cfg
+    ADR --> ADR2["002-lua-atomicity.md"]:::cfg
+    ADR --> ADR3["003-pubsub-decoupling.md"]:::cfg
+    ADR --> ADR4["004-ffmpeg-subprocess.md"]:::cfg
+  end
+
+  subgraph SG_SCRIPTS["  scripts/  "]
+    SCRIPTS --> SC1["lint_structure.py [R]"]:::req
+    SCRIPTS --> SC2["health_check.py · cache_purge.py"]:::cfg
+    SCRIPTS --> SC3["redis_flush_group.py · load_test.sh"]:::cfg
+  end
+
+  subgraph SG_DEPLOY["  deploy/  "]
+    DEPLOY --> DOCKER["docker/"]:::dir
+    DEPLOY --> SYSTEMD["systemd/"]:::dir
+    DEPLOY --> SENTINEL["sentinel/"]:::dir
+    DOCKER --> DO1["Dockerfile · docker-compose.yml · docker-compose.test.yml"]:::cfg
+    SYSTEMD --> SY1["jukebox-bot.service · jukebox-cache-cleanup.timer"]:::cfg
+    SENTINEL --> SE_["sentinel.conf"]:::cfg
+  end
+`;
+const { svg } = await mermaid.render('mmd-svg', graph);
+document.getElementById('mmd').innerHTML = svg;
+</script>
