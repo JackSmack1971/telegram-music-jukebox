@@ -1,0 +1,13 @@
+# Code quality
+black>=23.9.0
+isort>=5.12.0
+flake8>=6.1.0
+mypy>=1.5.0
+
+# Type stubs
+types-redis>=4.6.0
+types-aiofiles>=23.2.0
+
+# Documentation
+mkdocs>=1.5.0
+mkdocs-material>=9.4.0
