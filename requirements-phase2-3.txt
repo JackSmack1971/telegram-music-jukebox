@@ -1,0 +1,12 @@
+# Phase 2 & 3 dependencies (add to Phase 1 requirements.txt)
+
+# Telegram bot framework
+aiogram>=3.15.0
+
+# Telegram voice calls
+py-tgcalls>=2.2.11
+Pyrogram>=2.0.106  # MTProto client for pytgcalls
+
+# Optional: Async utilities
+async-watchdog>=1.0.0  # If using library watchdog
+asynciolimiter>=1.0.0  # Alternative rate limiter
