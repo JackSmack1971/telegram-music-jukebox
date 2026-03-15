@@ -1,6 +1,4 @@
-# Phase 1 Foundation dependencies
-
-# Core
+# Core framework
 structlog>=25.0.0
 msgpack>=1.0.8
 redis[hiredis]>=5.0.0
@@ -8,6 +6,9 @@ redis[hiredis]>=5.0.0
 # Content acquisition
 yt-dlp>=2024.11.4
 
-# Optional: Alternative Redlock implementation
-# redlock-ng>=1.0.16
+# Configuration
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# Optional: Redlock
 # aioredlock>=0.7.3
