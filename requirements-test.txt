@@ -1,0 +1,16 @@
+# Test framework
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-timeout>=2.1.0
+pytest-benchmark>=4.0.0
+
+# Mocking
+fakeredis[aioredis]>=2.20.0
+
+# Coverage
+pytest-cov>=4.1.0
+coverage>=7.3.0
+
+# Chaos testing
+# chaostoolkit>=1.18.0
+# chaostoolkit-kubernetes>=0.29.0
