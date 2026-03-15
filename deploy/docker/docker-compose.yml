@@ -1,0 +1,119 @@
+version: '3.8'
+
+services:
+  jukebox-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jukebox-bot
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      - redis-sentinel-1
+      - redis-sentinel-2
+      - redis-sentinel-3
+    volumes:
+      # 20GB disk cache with driver options
+      - cache_data:/var/cache/jukebox
+      # tmpfs for active streaming (512MB RAM)
+      - type: tmpfs
+        target: /dev/shm/jukebox
+        tmpfs:
+          size: 536870912  # 512MB in bytes
+          mode: 1777
+    networks:
+      - jukebox_net
+    ports:
+      - "3000:3000"  # Optional: health check endpoint
+
+  # Redis master
+  redis-1:
+    image: redis:7-alpine
+    container_name: redis-master
+    restart: unless-stopped
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD}
+      --save 60 1
+      --loglevel warning
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - jukebox_net
+    ports:
+      - "6379:6379"
+
+  # Redis Sentinel 1
+  redis-sentinel-1:
+    image: redis:7-alpine
+    container_name: redis-sentinel-1
+    restart: unless-stopped
+    command: redis-sentinel /etc/redis/sentinel.conf
+    volumes:
+      - ./infra/redis/sentinel.conf:/etc/redis/sentinel.conf:ro
+      - sentinel1_data:/data
+    networks:
+      - jukebox_net
+    ports:
+      - "26379:26379"
+    depends_on:
+      - redis-1
+
+  # Redis Sentinel 2
+  redis-sentinel-2:
+    image: redis:7-alpine
+    container_name: redis-sentinel-2
+    restart: unless-stopped
+    command: redis-sentinel /etc/redis/sentinel.conf
+    volumes:
+      - ./infra/redis/sentinel.conf:/etc/redis/sentinel.conf:ro
+      - sentinel2_data:/data
+    networks:
+      - jukebox_net
+    ports:
+      - "26380:26379"
+    depends_on:
+      - redis-1
+
+  # Redis Sentinel 3
+  redis-sentinel-3:
+    image: redis:7-alpine
+    container_name: redis-sentinel-3
+    restart: unless-stopped
+    command: redis-sentinel /etc/redis/sentinel.conf
+    volumes:
+      - ./infra/redis/sentinel.conf:/etc/redis/sentinel.conf:ro
+      - sentinel3_data:/data
+    networks:
+      - jukebox_net
+    ports:
+      - "26381:26379"
+    depends_on:
+      - redis-1
+
+networks:
+  jukebox_net:
+    driver: bridge
+
+volumes:
+  # 20GB cache volume with size limit
+  cache_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind,size=20G
+      device: /mnt/cache/jukebox
+  
+  redis_data:
+    driver: local
+  
+  sentinel1_data:
+    driver: local
+  
+  sentinel2_data:
+    driver: local
+  
+  sentinel3_data:
+    driver: local
